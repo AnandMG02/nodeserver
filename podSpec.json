@@ -1,0 +1,1 @@
+{"kind":"Pod","metadata":{"name":"rs01","labels":{"app":"mongo"}},"spec":{"containers":[{"name":"mongo","image":"mongo:latest","ports":[{"containerPort":27160,"name":"mongodb"}],"command":["mongod","--auth","--port","27160"],"env":[{"name":"MONGO_INITDB_ROOT_USERNAME","value":"root"},{"name":"MONGO_INITDB_ROOT_PASSWORD","value":"rootpass"}]}]}}
