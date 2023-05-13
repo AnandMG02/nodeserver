@@ -7,14 +7,14 @@ const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 
 const cluster = {
-  name: 'cluster',
+  name: 'hackathon2023-mongo-t-mobile',
   server: 'https://c104-e.us-east.containers.cloud.ibm.com:32744',
 };
 
 const user = {
-  name: 'token',
+  name: 'IAM#anand.mohan.g@ibm.com',
   user: {
-    token: 'sha256~phUrT4h6xW_nROUHpDOdzHluUg1kwAH_MSdj4ituRKs',
+    token: 'sha256~szBF9Q4VIDUPgoupQUsnvD7dmOYh9j-M1BRmB3IU7Q4',
   },
 };
 
@@ -44,11 +44,12 @@ app.get('/pods', (req, res) => {
         podip: pod.status.podIP,
         podport: pod.spec.containers[0].ports[0].containerPort,
         mongoUser: pod.spec.containers[0].env[0].value,
-        url: 'mongodb://' + pod.spec.containers[0].env[0].value + ':' + pod.spec.containers[0].env[1].value + '@' + pod.status.podIP + ':' + pod.spec.containers.ports + '/?authSource=admin',
+        url: 'mongodb://' + pod.spec.containers[0].env[0].value + ':' + pod.spec.containers[0].env[1].value + '@' + pod.status.podIP + ':' + pod.spec.containers[0].ports[0].containerPort + '/?authSource=admin',
         status: pod.status.phase
       }));
+      console.log(pods);
       res.json(pods);
-   
+
     })
     .catch((error) => {
       console.error(error);
@@ -64,12 +65,14 @@ app.post('/', (req, res) => {
 
   const minPort = 27000; // Minimum port number
   const maxPort = 29999; // Maximum port number
-   const randomMPort =Math.floor(Math.random() * (maxPort - minPort + 1)) + minPort;
+  const randomMPort = Math.floor(Math.random() * (maxPort - minPort + 1)) + minPort;
 
-   const minNPort = 30000; // Minimum port number
-   const maxNPort = 32767; // Maximum port number
-   const randomNPort = Math.floor(Math.random() * (maxPort - minPort + 1)) + minPort;
-
+  // const minNPort = 30000; // Minimum port number
+  // const maxNPort = 32767; // Maximum port number
+  // const randomNPort = Math.floor(Math.random() * (maxPort - minPort + 1)) + minPort;
+  const availableMemSizeMB = 1024;
+  const wiredTigerCacheSizeGB = Math.min(0.5, availableMemSizeMB / 1024);
+  
   // Define the pod template
   const pod = {
     apiVersion: 'v1',
@@ -78,6 +81,9 @@ app.post('/', (req, res) => {
       name: data.cluster,
     },
     spec: {
+      securityContext: {
+        runAsNonRoot: true,
+      },
       containers: [
         {
           name: 'mongo',
@@ -88,7 +94,7 @@ app.post('/', (req, res) => {
               name: 'mongodb',
             },
           ],
-          command: ['mongod', '--auth', '--port', randomMPort.toString()],
+          command: ['mongod','--auth', '--port', randomMPort.toString(), '--wiredTigerCacheSizeGB', wiredTigerCacheSizeGB.toString(), '--oplogSize', "50".toString()],
           env: [
             {
               name: 'MONGO_INITDB_ROOT_USERNAME',
@@ -99,70 +105,98 @@ app.post('/', (req, res) => {
               value: data.pwd,
             },
           ],
+
           resources: {
-            limits: null,
-            requests: null
-          }
-        },
-      ],
-    },
-  };
-
-  //defining service
-
-  const service = {
-    apiVersion: 'v1',
-    kind: 'Service',
-    metadata: {
-      name: data.cluster,
-    },
-    spec: {
-      selector: {
-        app: data.cluster,
-      },
-      ports: [
+            limits: {
+              cpu: '1',
+              memory: '512Mi',
+            },
+            requests: {
+              cpu: '0.5',
+              memory: '256Mi',
+            },
+          },
+		  volumes: [
         {
-          name: 'mongodb',
-          port: randomMPort,
-          targetPort: 'mongodb',
+          name: 'mongo-persistent-storage',
+          persistentVolumeClaim: {
+            claimName: 'mongodb-db',
+          },
+        },
+      ],
         },
       ],
     },
   };
 
-  coreV1Api.createNamespacedService('hackathon2023-mongo-t-mobile', service)
+
+
+
+  
+
+//defining service
+
+// const service = {
+//   apiVersion: 'v1',
+//   kind: 'Service',
+//   metadata: {
+//     name: data.cluster,
+//   },
+//   spec: {
+//     selector: {
+//       app: data.cluster,
+//     },
+//     ports: [
+//       {
+//         name: 'mongodb',
+//         port: randomMPort,
+//         targetPort: 'mongodb',
+//       },
+//     ],
+//   },
+// };
+
+// coreV1Api.createNamespacedService('hackathon2023-mongo-t-mobile', service)
+//   .then((response) => {
+//     console.log(response.body);
+//   })
+//   .catch((error) => {
+//     console.error(error);
+//   });
+
+// Create the pod
+coreV1Api.createNamespacedPod('hackathon2023-mongo-t-mobile', pod)
   .then((response) => {
     console.log(response.body);
+    
+
+    const username = kc.getCurrentUser();
+    console.log('Current user:', username.name);
+
+    res.status(200).send({
+      message: 'Pod created successfully!',
+    });
   })
   .catch((error) => {
     console.error(error);
-  });
 
-  // Create the pod
-  coreV1Api.createNamespacedPod('hackathon2023-mongo-t-mobile', pod)
-    .then((response) => {
-      console.log(response.body);
-
-      res.status(200).send({
-        message: 'Pod created successfully!',
-      });
-    })
-    .catch((error) => {
-      console.error(error);
-
-      res.status(500).send({
-        message: 'Failed to create pod!',
-      });
+    res.status(500).send({
+      message: 'Failed to create pod!',
     });
+  });
 });
 
 
 app.delete("/pods/:name", async (req, res) => {
   const podName = req.params.name;
+ // const serviceName = req.params.name;
 
   try {
     await coreV1Api.deleteNamespacedPod(podName, "hackathon2023-mongo-t-mobile");
     console.log(`Pod ${podName} deleted successfully.`);
+
+    await coreV1Api.deleteNamespacedService(serviceName, "hackathon2023-mongo-t-mobile");
+    console.log(`Service ${serviceName} deleted successfully.`);
 
     res.status(200).send({
       message: `Pod ${podName} deleted successfully!`,
