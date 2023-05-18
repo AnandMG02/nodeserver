@@ -1,6 +1,7 @@
 const express = require('express');
 const k8s = require('@kubernetes/client-node');
 const bodyParser = require('body-parser');
+const http = require('http');
 
 // Set up the OpenShift client configuration
 const kc = new k8s.KubeConfig();
@@ -14,9 +15,21 @@ const cluster = {
 const user = {
   name: 'IAM#anand.mohan.g@ibm.com',
   user: {
-    token: 'sha256~tnA6Tx6jLcK1xl707ATaaXpMmMMkbUUR5ZxtR2LArHI',
+    token: 'sha256~0wshVeV4q-Xy72uM7IfHtm01NwqalhBoznKZbqUJ9Wc',
   },
 };
+
+const options = {
+  hostname: 'api.openshift.example.com', // Replace with your OpenShift API hostname
+  port: 443,
+  path: '/apis/route.openshift.io/v1/namespaces/hackathon2023-mongo-t-mobile/routes', // Replace with your project/namespace name
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: 'Bearer sha256~0wshVeV4q-Xy72uM7IfHtm01NwqalhBoznKZbqUJ9Wc', // Replace with your access token
+  },
+};
+
 
 const context = {
   name: 'context',
@@ -31,10 +44,14 @@ kc.setCurrentContext(context.name);
 
 // Create the OpenShift client
 const coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
+const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
 
 // Set up the Node.js server
 const app = express();
 app.use(bodyParser.json());
+
+
+//CORS
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8080');
@@ -43,6 +60,7 @@ app.use((req, res, next) => {
   next();
 });
 
+//GET METHOD
 
 app.get('/pods', async (req, res) => {
   try {
@@ -77,6 +95,8 @@ app.get('/pods', async (req, res) => {
 });
 
 
+//POST METHOD
+
 app.post('/', (req, res) => {
   console.log("Posting...");
   // Get the data from the request body
@@ -101,19 +121,8 @@ app.post('/', (req, res) => {
     metadata: {
       name: data.cluster,
       labels: {
-        "deployment": "mongo-db",
-        "pod-template-hash": "67df6dd788"
+        "app": data.cluster,
       },
-      
-      ownerReferences: [
-        {
-          apiVersion: 'v1',
-          kind: 'Deployment', // Update with the appropriate owner kind
-          name: 'mongo-db', // Update with the actual MongoDB resource name
-          uid: '250f672c-97dc-46d2-8fa1-3d2731d6c537', // Update with the actual MongoDB resource UID
-          controller: true,
-        },
-      ],
       securityContext: {
         "allowPrivilegeEscalation": false,
         "capabilities": {
@@ -145,7 +154,7 @@ app.post('/', (req, res) => {
               name: 'mongodb',
             },
           ],
-          command: ['mongod', '--auth', '--port', randomMPort.toString(), '--wiredTigerCacheSizeGB', wiredTigerCacheSizeGB.toString(), '--oplogSize', "50".toString()],
+          command: ['mongod', '--port', randomMPort.toString(), '--wiredTigerCacheSizeGB', wiredTigerCacheSizeGB.toString(), '--oplogSize', "50".toString()],
           env: [
             {
               name: 'MONGO_INITDB_ROOT_USERNAME',
@@ -162,6 +171,17 @@ app.post('/', (req, res) => {
               mountPath: mountPath,
             },
           ],
+          "resources": {
+            "requests": {
+              "cpu": "200m",
+              "memory": "250Mi"
+            },
+            "limits": {
+              "cpu": "200m",
+              "memory": "250Mi"
+            }
+          }
+          
         },
      
       ],
@@ -181,6 +201,9 @@ const service = {
   metadata: {
     name: data.cluster,
   },
+  labels: {
+    "app": data.cluster,
+  },
   spec: {
     selector: {
       app: data.cluster,
@@ -198,40 +221,86 @@ const service = {
   },
 };
 
+
+
 coreV1Api.createNamespacedService('hackathon2023-mongo-t-mobile', service)
   .then((response) => {
-    console.log(response.body);
+    console.log("Service Created");
   })
   .catch((error) => {
     console.error(error);
   });
 
+
+
+//Defining Route
+
+
+
+
+
+const routeConfig = {
+  apiVersion: 'route.openshift.io/v1',
+  kind: 'Route',
+  metadata: {
+    name: data.cluster,
+    namespace: "hackathon2023-mongo-t-mobile" ,
+  },
+  labels: {
+    "app": data.cluster,
+  },
+  spec: {
+    to: {
+      kind: 'Service',
+      name: data.cluster,
+    },
+    port: {
+      targetPort: randomMPort,
+    },
+    // Add other route configuration options here
+  },
+};
+
+
+k8sApi.createNamespacedCustomObject(
+  'route.openshift.io',
+  'v1',
+  'hackathon2023-mongo-t-mobile',
+  'routes',
+  routeConfig
+)
+  .then((response) => {
+    console.log('Route created successfully');
+  })
+  .catch((error) => {
+    console.error('Error creating route:', error);
+  });
+
+
+
 // Create the pod
 coreV1Api.createNamespacedPod('hackathon2023-mongo-t-mobile', pod)
   .then((response) => {
-    
-   
     const username = kc.getCurrentUser();
     console.log('Current user:', username.name);
-
     res.status(200).send({
       message: 'Pod created successfully!',
     });
   })
   .catch((error) => {
     console.error(error);
-
     res.status(500).send({
       message: 'Failed to create pod!',
     });
   });
 });
 
+//DELETE METHOD
 
 app.delete("/pods/:name", async (req, res) => {
   const podName = req.params.name;
   const serviceName = req.params.name;
-
+  const routeName = req.params.name;
   try {
     await coreV1Api.deleteNamespacedPod(podName, "hackathon2023-mongo-t-mobile");
     console.log(`Pod ${podName} deleting...`);
@@ -239,9 +308,14 @@ app.delete("/pods/:name", async (req, res) => {
     console.log(`Pod ${podName} deleted successfully.`);
 
     await coreV1Api.deleteNamespacedService(serviceName, "hackathon2023-mongo-t-mobile");
-    console.log(`Pod ${serviceName} deleting...`);
+    console.log(`Service ${serviceName} deleting...`);
     await new Promise((resolve) => setTimeout(resolve, 5000));
     console.log(`Service ${serviceName} deleted successfully.`);
+
+    await k8sApi.deleteNamespacedCustomObject(routeName,"hackathon2023-mongo-t-mobile");
+    console.log(`Route ${routeName} deleting...`);
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    console.log(`Route ${serviceName} deleted successfully.`);
 
     res.status(200).send({
       message: `Pod ${podName} deleted successfully!`,
@@ -269,6 +343,8 @@ app.listen(3000, () => {
 async function gettingexternalIP(podName, namespace) {
   try {
     const response = await coreV1Api.readNamespacedService(podName, namespace);
+    console.log(podName);
+    console.log(response.body);
     const externalIP = response.body.status.loadBalancer.ingress[0].ip;
     return externalIP;
   } catch (error) {
