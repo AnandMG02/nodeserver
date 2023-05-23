@@ -15,18 +15,7 @@ const cluster = {
 const user = {
   name: 'IAM#anand.mohan.g@ibm.com',
   user: {
-    token: 'sha256~0wshVeV4q-Xy72uM7IfHtm01NwqalhBoznKZbqUJ9Wc',
-  },
-};
-
-const options = {
-  hostname: 'api.openshift.example.com', // Replace with your OpenShift API hostname
-  port: 443,
-  path: '/apis/route.openshift.io/v1/namespaces/hackathon2023-mongo-t-mobile/routes', // Replace with your project/namespace name
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    Authorization: 'Bearer sha256~0wshVeV4q-Xy72uM7IfHtm01NwqalhBoznKZbqUJ9Wc', // Replace with your access token
+    token: 'sha256~tnA6Tx6jLcK1xl707ATaaXpMmMMkbUUR5ZxtR2LArHI',
   },
 };
 
