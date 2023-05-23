@@ -82,8 +82,8 @@ app.get('/pods', async (req, res) => {
 
     }));
 
-    // Filter out any undefined values from the map operation
-    const filteredPods = pods.filter(pod => pod !== undefined);
+
+
 
     res.json(filteredPods);
   } catch (error) {
