@@ -77,9 +77,9 @@ app.get('/pods', async (req, res) => {
 
     res.json(pods);
   } catch (error) {
-    
+    console.log(error);
     res.status(500).send({
-      message: 'Failed to get pods!',err
+      message: 'Failed to get pods!',
     });
   }
 });
