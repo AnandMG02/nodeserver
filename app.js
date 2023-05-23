@@ -53,20 +53,21 @@ app.use(bodyParser.json());
 
 //CORS
 
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8080');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  next();
-});
+// app.use((req, res, next) => {
+//   res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8080');
+//   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+//   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+//   next();
+// });
 
 //GET METHOD
 
 app.get('/pods', async (req, res) => {
   try {
-    console.log('Getting..');
+
     const response = await coreV1Api.listNamespacedPod('hackathon2023-mongo-t-mobile');
     const pods = await Promise.all(response.body.items.map(async (pod) => {
+      console.log(pods);
       const podName = pod.metadata.name;
       const podIP = await gettingexternalIP(podName, 'hackathon2023-mongo-t-mobile');
       const podPort = pod.spec.containers[0].ports[0].containerPort;
@@ -84,12 +85,12 @@ app.get('/pods', async (req, res) => {
       };
     }));
 
-    console.log(pods);
+
     res.json(pods);
   } catch (error) {
-    console.error(error);
+    
     res.status(500).send({
-      message: 'Failed to get pods!',
+      message: 'Failed to get pods!',err
     });
   }
 });
@@ -98,7 +99,7 @@ app.get('/pods', async (req, res) => {
 //POST METHOD
 
 app.post('/', (req, res) => {
-  console.log("Posting...");
+
   // Get the data from the request body
   const data = req.body
 
