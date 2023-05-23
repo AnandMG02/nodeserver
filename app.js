@@ -15,7 +15,7 @@ const cluster = {
 const user = {
   name: 'IAM#anand.mohan.g@ibm.com',
   user: {
-    token: 'sha256~tnA6Tx6jLcK1xl707ATaaXpMmMMkbUUR5ZxtR2LArHI',
+    token: 'sha256~049jkbKL_RZ2MjzjHeuXTBNDut7lXS6yVoqQwEZIMWg',
   },
 };
 
@@ -53,11 +53,15 @@ app.use(bodyParser.json());
 
 app.get('/pods', async (req, res) => {
   try {
-
     const response = await coreV1Api.listNamespacedPod('hackathon2023-mongo-t-mobile');
     const pods = await Promise.all(response.body.items.map(async (pod) => {
-      console.log(pods);
-      const podName = pod.metadata.name;
+
+      console.log(pod.metadata);
+
+      if(pod.metadata.name != "nodeserver-ibmdbaas-96f885644-r4jl8"){
+
+        const podName = pod.metadata.name;
+
       const podIP = await gettingexternalIP(podName, 'hackathon2023-mongo-t-mobile');
       const podPort = pod.spec.containers[0].ports[0].containerPort;
       const mongoUser = pod.spec.containers[0].env[0].value;
@@ -72,17 +76,24 @@ app.get('/pods', async (req, res) => {
         url: url,
         status: status
       };
+
+      }
+      
+
     }));
 
+    // Filter out any undefined values from the map operation
+    const filteredPods = pods.filter(pod => pod !== undefined);
 
-    res.json(pods);
+    res.json(filteredPods);
   } catch (error) {
-    
+  
     res.status(500).send({
-      message: 'Failed to get pods!',err
+      message: 'Failed to get pods!',
     });
   }
 });
+
 
 
 //POST METHOD
@@ -102,8 +113,8 @@ app.post('/', (req, res) => {
   const availableMemSizeMB = 1024;
   const wiredTigerCacheSizeGB = Math.min(0.5, availableMemSizeMB / 1024);
   const pvcName = 'mongodb-db';
-    const mountPath = '/data/db';
-  
+  const mountPath = '/data/db';
+
   // Define the pod template
   const pod = {
     apiVersion: 'v1',
@@ -116,14 +127,14 @@ app.post('/', (req, res) => {
       securityContext: {
         "allowPrivilegeEscalation": false,
         "capabilities": {
-            "drop": [
-                "ALL"
-            ]
+          "drop": [
+            "ALL"
+          ]
         },
         "runAsNonRoot": true,
         "runAsUser": 1001000000
+      },
     },
-        },
     spec: {
       volumes: [
         {
@@ -171,118 +182,118 @@ app.post('/', (req, res) => {
               "memory": "250Mi"
             }
           }
-          
+
         },
-     
+
       ],
     },
   };
-  
-
-
-
-  
-
-//defining service
-
-const service = {
-  apiVersion: 'v1',
-  kind: 'Service',
-  metadata: {
-    name: data.cluster,
-  },
-  labels: {
-    "app": data.cluster,
-  },
-  spec: {
-    selector: {
-      app: data.cluster,
-    },
-    ports: [
-      {
-        name: 'mongodb',
-        protocol: 'TCP',
-        port: randomMPort,
-        targetPort : randomMPort ,
-        nodePort: randomNPort
-      },
-    ],
-    type: 'LoadBalancer',
-  },
-};
-
-
-
-coreV1Api.createNamespacedService('hackathon2023-mongo-t-mobile', service)
-  .then((response) => {
-    console.log("Service Created");
-  })
-  .catch((error) => {
-    console.error(error);
-  });
-
-
-
-//Defining Route
 
 
 
 
 
-const routeConfig = {
-  apiVersion: 'route.openshift.io/v1',
-  kind: 'Route',
-  metadata: {
-    name: data.cluster,
-    namespace: "hackathon2023-mongo-t-mobile" ,
-  },
-  labels: {
-    "app": data.cluster,
-  },
-  spec: {
-    to: {
-      kind: 'Service',
+
+  //defining service
+
+  const service = {
+    apiVersion: 'v1',
+    kind: 'Service',
+    metadata: {
       name: data.cluster,
     },
-    port: {
-      targetPort: randomMPort,
+    labels: {
+      "app": data.cluster,
     },
-    // Add other route configuration options here
-  },
-};
-
-
-k8sApi.createNamespacedCustomObject(
-  'route.openshift.io',
-  'v1',
-  'hackathon2023-mongo-t-mobile',
-  'routes',
-  routeConfig
-)
-  .then((response) => {
-    console.log('Route created successfully');
-  })
-  .catch((error) => {
-    console.error('Error creating route:', error);
-  });
+    spec: {
+      selector: {
+        app: data.cluster,
+      },
+      ports: [
+        {
+          name: 'mongodb',
+          protocol: 'TCP',
+          port: randomMPort,
+          targetPort: randomMPort,
+          nodePort: randomNPort
+        },
+      ],
+      type: 'LoadBalancer',
+    },
+  };
 
 
 
-// Create the pod
-coreV1Api.createNamespacedPod('hackathon2023-mongo-t-mobile', pod)
-  .then((response) => {
-    const username = kc.getCurrentUser();
-    console.log('Current user:', username.name);
-    res.status(200).send({
-      message: 'Pod created successfully!',
+  coreV1Api.createNamespacedService('hackathon2023-mongo-t-mobile', service)
+    .then((response) => {
+      console.log("Service Created");
+    })
+    .catch((error) => {
+      console.error(error);
     });
-  })
-  .catch((error) => {
-    console.error(error);
-    res.status(500).send({
-      message: 'Failed to create pod!',
+
+
+
+  //Defining Route
+
+
+
+
+
+  const routeConfig = {
+    apiVersion: 'route.openshift.io/v1',
+    kind: 'Route',
+    metadata: {
+      name: data.cluster,
+      namespace: "hackathon2023-mongo-t-mobile",
+    },
+    labels: {
+      "app": data.cluster,
+    },
+    spec: {
+      to: {
+        kind: 'Service',
+        name: data.cluster,
+      },
+      port: {
+        targetPort: randomMPort,
+      },
+      // Add other route configuration options here
+    },
+  };
+
+
+  k8sApi.createNamespacedCustomObject(
+    'route.openshift.io',
+    'v1',
+    'hackathon2023-mongo-t-mobile',
+    'routes',
+    routeConfig
+  )
+    .then((response) => {
+      console.log('Route created successfully');
+    })
+    .catch((error) => {
+      console.error('Error creating route:', error);
     });
-  });
+
+
+
+  // Create the pod
+  coreV1Api.createNamespacedPod('hackathon2023-mongo-t-mobile', pod)
+    .then((response) => {
+      const username = kc.getCurrentUser();
+      console.log('Current user:', username.name);
+      res.status(200).send({
+        message: 'Pod created successfully!',
+      });
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).send({
+        message: 'Failed to create pod!',
+      });
+    });
 });
 
 //DELETE METHOD
@@ -302,7 +313,7 @@ app.delete("/pods/:name", async (req, res) => {
     await new Promise((resolve) => setTimeout(resolve, 5000));
     console.log(`Service ${serviceName} deleted successfully.`);
 
-    await k8sApi.deleteNamespacedCustomObject(routeName,"hackathon2023-mongo-t-mobile");
+    await k8sApi.deleteNamespacedCustomObject(routeName, "hackathon2023-mongo-t-mobile");
     console.log(`Route ${routeName} deleting...`);
     await new Promise((resolve) => setTimeout(resolve, 5000));
     console.log(`Route ${serviceName} deleted successfully.`);
