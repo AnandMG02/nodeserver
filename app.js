@@ -56,7 +56,6 @@ app.get('/pods', async (req, res) => {
     const response = await coreV1Api.listNamespacedPod('hackathon2023-mongo-t-mobile');
     const pods = await Promise.all(response.body.items.map(async (pod) => {
 
-      console.log(pod.metadata);
 
       if(pod.metadata.name != "nodeserver-ibmdbaas-96f885644-r4jl8"){
 
@@ -344,8 +343,7 @@ app.listen(3000, () => {
 async function gettingexternalIP(podName, namespace) {
   try {
     const response = await coreV1Api.readNamespacedService(podName, namespace);
-    console.log(podName);
-    console.log(response.body);
+
     const externalIP = response.body.status.loadBalancer.ingress[0].ip;
     return externalIP;
   } catch (error) {
