@@ -57,7 +57,7 @@ app.get('/pods', async (req, res) => {
     const pods = await Promise.all(response.body.items.map(async (pod) => {
 
 
-      if(pod.metadata.name != "nodeserver-ibmdbaas-96f885644-r4jl8"){
+      if (!pod.metadata.name.startsWith('ibmdbaas')){
 
         const podName = pod.metadata.name;
 
