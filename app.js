@@ -87,11 +87,7 @@ app.get('/pods', async (req, res) => {
 
     res.json(filteredPods);
   } catch (error) {
-<<<<<<< HEAD
-  
-=======
 
->>>>>>> aafb1428a46f04e1437c33f26a8c3fc6eaf248c3
     res.status(500).send({
       message: 'Failed to get pods!',
     });
