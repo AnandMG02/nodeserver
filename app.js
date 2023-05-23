@@ -58,9 +58,7 @@ app.get('/pods', async (req, res) => {
 
 
       if (!pod.metadata.name.startsWith('ibmdbaas')){
-
-        const podName = pod.metadata.name;
-
+      const podName = pod.metadata.name;
       const podIP = await gettingexternalIP(podName, 'hackathon2023-mongo-t-mobile');
       const podPort = pod.spec.containers[0].ports[0].containerPort;
       const mongoUser = pod.spec.containers[0].env[0].value;
