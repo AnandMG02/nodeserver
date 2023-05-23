@@ -53,45 +53,40 @@ app.use(bodyParser.json());
 
 app.get('/pods', async (req, res) => {
   try {
+
     const response = await coreV1Api.listNamespacedPod('hackathon2023-mongo-t-mobile');
     const pods = await Promise.all(response.body.items.map(async (pod) => {
-
-
-      if (!pod.metadata.name.startsWith('ibmdbaas')){
-      const podName = pod.metadata.name;
-      const podIP = await gettingexternalIP(podName, 'hackathon2023-mongo-t-mobile');
-      const podPort = pod.spec.containers[0].ports[0].containerPort;
-      const mongoUser = pod.spec.containers[0].env[0].value;
-      const url = `mongodb://${mongoUser}:${pod.spec.containers[0].env[1].value}@${podIP}:${podPort}/?authSource=admin`;
-      const status = pod.status.phase;
-
-      return {
-        clustername: podName,
-        podip: podIP,
-        podport: podPort,
-        mongoUser: mongoUser,
-        url: url,
-        status: status
-      };
-
-      }
       
-
+      const podName = pod.metadata.name;
+     if (!pod.metadata.name.startsWith('ibmdbaas')){
+        const podIP = await gettingexternalIP(podName, 'hackathon2023-mongo-t-mobile');
+        const podPort = pod.spec.containers[0].ports[0].containerPort;
+        const mongoUser = pod.spec.containers[0].env[0].value;
+        const url = `mongodb://${mongoUser}:${pod.spec.containers[0].env[1].value}@${podIP}:${podPort}/?authSource=admin`;
+        const status = pod.status.phase;
+  
+        return {
+          clustername: podName,
+          podip: podIP,
+          podport: podPort,
+          mongoUser: mongoUser,
+          url: url,
+          status: status
+        };
+      }
+     
     }));
 
+    res.json(pods.filter(pod => pod !== undefined));
+    
 
-
-
-    res.json(filteredPods);
   } catch (error) {
-
+    console.log(error);
     res.status(500).send({
       message: 'Failed to get pods!',
     });
   }
 });
-
-
 
 //POST METHOD
 
