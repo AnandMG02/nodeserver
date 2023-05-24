@@ -3,6 +3,7 @@ const k8s = require('@kubernetes/client-node');
 const bodyParser = require('body-parser');
 const http = require('http');
 
+
 // Set up the OpenShift client configuration
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -15,9 +16,10 @@ const cluster = {
 const user = {
   name: 'IAM#anand.mohan.g@ibm.com',
   user: {
-    token: 'sha256~049jkbKL_RZ2MjzjHeuXTBNDut7lXS6yVoqQwEZIMWg',
+    token: 'sha256~YWROMpqC07LoaXVR_yNjP1pU_A9CCprsTJlM5jJY__0',
   },
 };
+
 
 
 const context = {
@@ -35,19 +37,18 @@ kc.setCurrentContext(context.name);
 const coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
 const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
 
+//function
+
+async function updateToken() {
+  const newToken = await retrieveNewToken();
+  user.user.token = newToken;
+  kc.updateUser(user);
+}
+
 // Set up the Node.js server
 const app = express();
 app.use(bodyParser.json());
 
-
-//CORS
-
-// app.use((req, res, next) => {
-//   res.setHeader('Access-Control-Allow-Origin', 'http://localhost:8080');
-//   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
-//   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-//   next();
-// });
 
 //GET METHOD
 
@@ -228,10 +229,6 @@ app.post('/', (req, res) => {
 
   //Defining Route
 
-
-
-
-
   const routeConfig = {
     apiVersion: 'route.openshift.io/v1',
     kind: 'Route',
@@ -327,6 +324,7 @@ app.delete("/pods/:name", async (req, res) => {
 
 
 app.listen(3000, () => {
+
   console.log('Server running on port 3000');
 });
 
