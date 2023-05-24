@@ -15,7 +15,7 @@ const cluster = {
 const user = {
   name: 'IAM#anand.mohan.g@ibm.com',
   user: {
-    token: 'sha256~049jkbKL_RZ2MjzjHeuXTBNDut7lXS6yVoqQwEZIMWg',
+    token: 'sha256~YWROMpqC07LoaXVR_yNjP1pU_A9CCprsTJlM5jJY__0',
   },
 };
 
