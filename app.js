@@ -1,7 +1,7 @@
+
 const express = require('express');
 const k8s = require('@kubernetes/client-node');
 const bodyParser = require('body-parser');
-const http = require('http');
 
 
 // Set up the OpenShift client configuration
@@ -16,7 +16,7 @@ const cluster = {
 const user = {
   name: 'IAM#anand.mohan.g@ibm.com',
   user: {
-    token: 'sha256~YWROMpqC07LoaXVR_yNjP1pU_A9CCprsTJlM5jJY__0',
+    token: 'sha256~LmTn1swB5UBWDAYNPzgBPtI_BGTJxVRAmrn9z9I0cbM',
   },
 };
 
@@ -78,9 +78,9 @@ app.get('/pods', async (req, res) => {
      
     }));
 
-    res.json(pods.filter(pod => pod !== undefined));
-    
+    const filteredPods = pods.filter(pod => pod !== undefined);
 
+    res.json(filteredPods);
   } catch (error) {
     console.log(error);
     res.status(500).send({
@@ -291,28 +291,33 @@ app.delete("/pods/:name", async (req, res) => {
   const podName = req.params.name;
   const serviceName = req.params.name;
   const routeName = req.params.name;
+  const namespace = "hackathon2023-mongo-t-mobile";
   try {
-    await coreV1Api.deleteNamespacedPod(podName, "hackathon2023-mongo-t-mobile");
+    await coreV1Api.deleteNamespacedPod(podName,namespace );
     console.log(`Pod ${podName} deleting...`);
     await new Promise((resolve) => setTimeout(resolve, 5000));
     console.log(`Pod ${podName} deleted successfully.`);
 
-    await coreV1Api.deleteNamespacedService(serviceName, "hackathon2023-mongo-t-mobile");
+    await coreV1Api.deleteNamespacedService(serviceName, namespace);
     console.log(`Service ${serviceName} deleting...`);
     await new Promise((resolve) => setTimeout(resolve, 5000));
     console.log(`Service ${serviceName} deleted successfully.`);
 
-    await k8sApi.deleteNamespacedCustomObject(routeName, "hackathon2023-mongo-t-mobile");
-    console.log(`Route ${routeName} deleting...`);
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    console.log(`Route ${serviceName} deleted successfully.`);
+    // await k8sApi.deleteNamespacedCustomObject(routeName, namespace);
+    // console.log(`Route ${routeName} deleting...`);
+    // await new Promise((resolve) => setTimeout(resolve, 5000));
+    // console.log(`Route ${serviceName} deleted successfully.`);
+    await k8sApi.deleteNamespacedCustomObject('route.openshift.io', 'v1', namespace, 'routes', routeName);
+console.log(`Route ${routeName} deleting...`);
+await new Promise((resolve) => setTimeout(resolve, 5000));
+console.log(`Route ${routeName} deleted successfully.`);
+
 
     res.status(200).send({
       message: `Pod ${podName} deleted successfully!`,
     });
   } catch (error) {
-    console.error(error);
-
+   console.error(error);
     res.status(500).send({
       message: `Failed to delete pod ${podName}!`,
     });
@@ -323,10 +328,7 @@ app.delete("/pods/:name", async (req, res) => {
 
 
 
-app.listen(3000, () => {
 
-  console.log('Server running on port 3000');
-});
 
 
 //function
@@ -342,3 +344,6 @@ async function gettingexternalIP(podName, namespace) {
     return ''; // Return an empty string or handle the error as needed
   }
 }
+
+
+module.exports = app;
