@@ -303,10 +303,6 @@ app.delete("/pods/:name", async (req, res) => {
     await new Promise((resolve) => setTimeout(resolve, 5000));
     console.log(`Service ${serviceName} deleted successfully.`);
 
-    // await k8sApi.deleteNamespacedCustomObject(routeName, namespace);
-    // console.log(`Route ${routeName} deleting...`);
-    // await new Promise((resolve) => setTimeout(resolve, 5000));
-    // console.log(`Route ${serviceName} deleted successfully.`);
     await k8sApi.deleteNamespacedCustomObject('route.openshift.io', 'v1', namespace, 'routes', routeName);
 console.log(`Route ${routeName} deleting...`);
 await new Promise((resolve) => setTimeout(resolve, 5000));
