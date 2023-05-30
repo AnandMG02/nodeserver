@@ -57,15 +57,15 @@ app.get('/pods', async (req, res) => {
 
     const response = await coreV1Api.listNamespacedPod('hackathon2023-mongo-t-mobile');
     const pods = await Promise.all(response.body.items.map(async (pod) => {
-      
+
       const podName = pod.metadata.name;
-     if (!pod.metadata.name.startsWith('ibmdbaas')){
+      if (!pod.metadata.name.startsWith('ibmdbaas')) {
         const podIP = await gettingexternalIP(podName, 'hackathon2023-mongo-t-mobile');
         const podPort = pod.spec.containers[0].ports[0].containerPort;
         const mongoUser = pod.spec.containers[0].env[0].value;
         const url = `mongodb://${mongoUser}:${pod.spec.containers[0].env[1].value}@${podIP}:${podPort}/?authSource=admin`;
         const status = pod.status.phase;
-  
+
         return {
           clustername: podName,
           podip: podIP,
@@ -75,7 +75,7 @@ app.get('/pods', async (req, res) => {
           status: status
         };
       }
-     
+
     }));
 
     const filteredPods = pods.filter(pod => pod !== undefined);
@@ -293,7 +293,7 @@ app.delete("/pods/:name", async (req, res) => {
   const routeName = req.params.name;
   const namespace = "hackathon2023-mongo-t-mobile";
   try {
-    await coreV1Api.deleteNamespacedPod(podName,namespace );
+    await coreV1Api.deleteNamespacedPod(podName, namespace);
     console.log(`Pod ${podName} deleting...`);
     await new Promise((resolve) => setTimeout(resolve, 5000));
     console.log(`Pod ${podName} deleted successfully.`);
@@ -304,16 +304,16 @@ app.delete("/pods/:name", async (req, res) => {
     console.log(`Service ${serviceName} deleted successfully.`);
 
     await k8sApi.deleteNamespacedCustomObject('route.openshift.io', 'v1', namespace, 'routes', routeName);
-console.log(`Route ${routeName} deleting...`);
-await new Promise((resolve) => setTimeout(resolve, 5000));
-console.log(`Route ${routeName} deleted successfully.`);
+    console.log(`Route ${routeName} deleting...`);
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    console.log(`Route ${routeName} deleted successfully.`);
 
 
     res.status(200).send({
       message: `Pod ${podName} deleted successfully!`,
     });
   } catch (error) {
-   console.error(error);
+    console.error(error);
     res.status(500).send({
       message: `Failed to delete pod ${podName}!`,
     });

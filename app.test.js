@@ -1,7 +1,7 @@
 const request = require('supertest');
 const { expect } = require('chai');
 const app = require('./app');
-const { CoreV1Api,CustomObjectsApi  } = require('@kubernetes/client-node');
+const { CoreV1Api, CustomObjectsApi } = require('@kubernetes/client-node');
 
 describe('Pods API', () => {
   it('should get a list of pods', async () => {
@@ -23,27 +23,27 @@ describe('Pods API', () => {
       .expect(200);
 
     expect(res.body.message).to.equal('Pod created successfully!');
-  
+
   });
 
- 
+
 
   it('should delete a pod', async () => {
     const podName = 'my-pod';
     const serviceName = 'my-service';
     const routeName = 'my-route';
     const namespace = 'hackathon2023-mongo-t-mobile';
-  
+
     // Mock the CoreV1Api object
     const coreV1Api = new CoreV1Api();
-  
+
     // Mock the deleteNamespacedPod function
     jest.spyOn(coreV1Api, 'deleteNamespacedPod').mockImplementation((name, ns) => {
       expect(name).toBe(podName);
       expect(ns).toBe(namespace); // Verify the namespace value
       return Promise.resolve();
     });
-  
+
     // Mock the deleteNamespacedService function
     jest.spyOn(coreV1Api, 'deleteNamespacedService').mockImplementation((name, ns) => {
       expect(name).toBe(serviceName);
@@ -52,7 +52,7 @@ describe('Pods API', () => {
     });
 
     const customObjectsApi = new CustomObjectsApi();
-  
+
     // Mock the deleteNamespacedCustomObject function
     jest.spyOn(customObjectsApi, 'deleteNamespacedCustomObject').mockImplementation((group, version, ns, plural, name) => {
       expect(group).toBe('route.openshift.io');
@@ -62,7 +62,7 @@ describe('Pods API', () => {
       expect(name).toBe(routeName);
       return Promise.resolve();
     });
-  
+
     // Make the delete request
     await request(app)
       .delete(`/pods/${podName}`)
@@ -70,10 +70,10 @@ describe('Pods API', () => {
         message: `Pod ${podName} deleted successfully!`,
       });
   });
-  
-  
- 
-  
+
+
+
+
 
 
 
