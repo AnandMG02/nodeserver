@@ -52,8 +52,6 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
-
-
 //GET METHOD
 
 app.get('/pods', async (req, res) => {
