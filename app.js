@@ -39,13 +39,7 @@ kc.setCurrentContext(context.name);
 const coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
 const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
 
-//function
 
-async function updateToken() {
-  const newToken = await retrieveNewToken();
-  user.user.token = newToken;
-  kc.updateUser(user);
-}
 
 // Set up the Node.js server
 const app = express();
