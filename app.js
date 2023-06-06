@@ -2,6 +2,8 @@
 const express = require('express');
 const k8s = require('@kubernetes/client-node');
 const bodyParser = require('body-parser');
+const cors = require('cors');
+
 
 
 // Set up the OpenShift client configuration
@@ -48,6 +50,8 @@ async function updateToken() {
 // Set up the Node.js server
 const app = express();
 app.use(bodyParser.json());
+app.use(cors());
+
 
 
 //GET METHOD
@@ -340,6 +344,9 @@ async function gettingexternalIP(podName, namespace) {
     return ''; // Return an empty string or handle the error as needed
   }
 }
+
+
+
 
 
 module.exports = app;
