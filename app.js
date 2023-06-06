@@ -3,13 +3,9 @@ const express = require('express');
 const k8s = require('@kubernetes/client-node');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const axios = require('axios');
 
 
-
-
-
-
-// Set up the OpenShift client configuration
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
 
@@ -21,7 +17,7 @@ const cluster = {
 const user = {
   name: 'IAM#anand.mohan.g@ibm.com',
   user: {
-    token: 'sha256~c7VH9NxhVbaMIHoY4Gm2g7ocrAw842lSRtLY69hnnl4',
+    token: 'sha256~RmHdBq6Rg59xVg9rf0_EiOJ0GM8tF3LS6fsNJe7L-rE',
   },
 };
 
@@ -38,13 +34,9 @@ kc.addUser(user);
 kc.addContext(context);
 kc.setCurrentContext(context.name);
 
-// Create the OpenShift client
 const coreV1Api = kc.makeApiClient(k8s.CoreV1Api);
 const k8sApi = kc.makeApiClient(k8s.CustomObjectsApi);
 
-
-
-// Set up the Node.js server
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
@@ -53,7 +45,6 @@ app.use(cors());
 
 app.get('/pods', async (req, res) => {
   try {
-
     const response = await coreV1Api.listNamespacedPod('hackathon2023-mongo-t-mobile');
     const pods = await Promise.all(response.body.items.map(async (pod) => {
 
@@ -92,15 +83,15 @@ app.get('/pods', async (req, res) => {
 
 app.post('/', (req, res) => {
 
-  // Get the data from the request body
+ 
   const data = req.body
 
-  const minPort = 27000; // Minimum port number
-  const maxPort = 29999; // Maximum port number
+  const minPort = 27000; 
+  const maxPort = 29999; 
   const randomMPort = Math.floor(Math.random() * (maxPort - minPort + 1)) + minPort;
 
-  const minNPort = 30000; // Minimum port number
-  const maxNPort = 32767; // Maximum port number
+  const minNPort = 30000; 
+  const maxNPort = 32767; 
   const randomNPort = Math.floor(Math.random() * (maxNPort - minNPort + 1)) + minNPort;
   const availableMemSizeMB = 1024;
   const wiredTigerCacheSizeGB = Math.min(0.5, availableMemSizeMB / 1024);
@@ -136,7 +127,7 @@ app.post('/', (req, res) => {
           },
         },
       ],
-      // Rest of the pod configuration remains unchanged
+    
       containers: [
         {
           name: 'mongo',
@@ -180,10 +171,6 @@ app.post('/', (req, res) => {
       ],
     },
   };
-
-
-
-
 
 
   //defining service
@@ -246,7 +233,7 @@ app.post('/', (req, res) => {
       port: {
         targetPort: randomMPort,
       },
-      // Add other route configuration options here
+    
     },
   };
 
@@ -320,27 +307,18 @@ app.delete("/pods/:name", async (req, res) => {
 });
 
 
-
-
-
-
-
-
 //function
 
 async function gettingexternalIP(podName, namespace) {
   try {
     const response = await coreV1Api.readNamespacedService(podName, namespace);
-
     const externalIP = response.body.status.loadBalancer.ingress[0].ip;
     return externalIP;
   } catch (error) {
     console.error(error);
-    return ''; // Return an empty string or handle the error as needed
+    return ''; 
   }
 }
-
-
 
 
 
