@@ -6,6 +6,9 @@ const cors = require('cors');
 
 
 
+
+
+
 // Set up the OpenShift client configuration
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
